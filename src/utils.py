@@ -43,4 +43,5 @@ def over_memory_threshold(memory_limit_mb):
     """
     mem_info = psutil.virtual_memory()
     used_mb = mem_info.used // (1024 * 1024)
-    return used_mb > memory_limit_mb
+    # Логика 80%: если мы превысили 80% от выделенной памяти, то возвращается true
+    return used_mb > (memory_limit_mb * 0.8)

@@ -54,9 +54,9 @@ class ResourceMonitor:
             mem_info = psutil.virtual_memory()
             used_mb = mem_info.used // (1024 * 1024)
 
-            # Простая логика 90%: если мы превысили 90% лимита,
+            # Простая логика 80%: если мы превысили 80% лимита,
             # можно завершить какой-нибудь процесс фаззинга.
-            threshold_90 = int(self.memory_limit * 0.9)
+            threshold_90 = int(self.memory_limit * 0.8)
             if used_mb > threshold_90:
                 # TODO: Реализовать логику, как убиваем процесс
                 pass
