@@ -1,9 +1,9 @@
 import time
 import logging
 import json
-from src.resource_monitor import ResourceMonitor
-from src.process_manager import ProcessManager
-from src.result_collector import ResultCollector
+from fuzzflow.src.resource_monitor import ResourceMonitor
+from fuzzflow.src.process_manager import ProcessManager
+from fuzzflow.src.result_collector import ResultCollector
 
 logging.basicConfig(
     level=logging.DEBUG,

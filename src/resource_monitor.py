@@ -2,7 +2,7 @@ import time
 import threading
 import psutil
 
-from src.utils import over_memory_threshold
+from fuzzflow.src.utils import over_memory_threshold
 
 class ResourceMonitor:
     """
