@@ -42,7 +42,7 @@ class Orchestrator:
 
             while not self.resource_monitor.can_start_new_process():
                 logging.warning("Insufficient resources for new process. Waiting...")
-                self._wait_some_seconds(2)
+                self._wait_some_seconds(60)
 
             logging.debug(f"Starting fuzzing process for wrapper {wrapper}")
             proc_info = self.process_manager.start_fuzzing(wrapper)
@@ -51,13 +51,13 @@ class Orchestrator:
             logging.info(f"Fuzzing process started (PID: {proc_info['process'].pid})")
 
             self._collect_finished_processes()
-            self._wait_some_seconds(5)
+            self._wait_some_seconds(60)
 
 
         while self._there_are_still_active_processes():
             logging.info("Waiting for all processes to complete...")
             self._collect_finished_processes()
-            self._wait_some_seconds(5)
+            self._wait_some_seconds(60)
 
         logging.info("Stopping resource monitor...")
         self.resource_monitor.stop()
