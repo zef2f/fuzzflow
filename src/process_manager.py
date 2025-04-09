@@ -10,22 +10,22 @@ logging.basicConfig(
 
 class ProcessManager:
     """
-    Класс для запуска и остановки отдельных процессов фаззинга.
+    Class for starting and stopping individual fuzzing processes.
     """
 
     def __init__(self, single_fuzz_script):
         """
-        :param single_fuzz_script: Путь к скрипту, который запускает конкретный fuzz-процесс.
+        :param single_fuzz_script: Path to the script that runs a specific fuzz process.
         """
         self.single_fuzz_script = single_fuzz_script
-        logging.info(f"Инициализирован ProcessManager с фаззинг-скриптом: {single_fuzz_script}")
+        logging.info(f"ProcessManager initialized with fuzzing script: {single_fuzz_script}")
 
     def start_fuzzing(self, wrapper):
         """
-        Запускает процесс фаззинга, основываясь на названии обертки.
+        Start a fuzzing process based on wrapper name.
         """
         full_cmd = [self.single_fuzz_script] + [wrapper]
-        logging.info(f"Запуск фаззинга для {wrapper}) с командой: {' '.join(full_cmd)}")
+        logging.info(f"Starting fuzzing for {wrapper}) with command: {' '.join(full_cmd)}")
 
         try:
             process = subprocess.Popen(
@@ -34,7 +34,7 @@ class ProcessManager:
                 stderr=subprocess.PIPE,
                 text=True
             )
-            logging.info(f"Фаззинг-процесс запущен (Wrapper name: {wrapper}, PID: {process.pid})")
+            logging.info(f"Fuzzing process started (Wrapper name: {wrapper}, PID: {process.pid})")
 
             proc_info = {
                 "wrapper_name": wrapper,
@@ -44,28 +44,28 @@ class ProcessManager:
             return proc_info
 
         except Exception as e:
-            logging.error(f"Ошибка при запуске фаззинга (Wrapper ID: {wrapper_id}): {e}", exc_info=True)
+            logging.error(f"Error starting fuzzing (Wrapper ID: {wrapper_id}): {e}", exc_info=True)
             return None
 
     def kill_fuzzing(self, proc_info):
         """
-        Прерывает процесс, соответствующий переданному proc_info.
-        :param proc_info: словарь вида { "process": <subprocess.Popen>, ... }
+        Terminate the process corresponding to the provided proc_info.
+        :param proc_info: dictionary of the form { "process": <subprocess.Popen>, ... }
         """
         process = proc_info.get("process")
         wrapper_name = proc_info.get("wrapper_name", "unknown")
 
         if process and process.poll() is None:
             try:
-                logging.warning(f"Попытка завершить процесс фаззинга (Wrapper name: {wrapper_name}, PID: {process.pid})...")
+                logging.warning(f"Attempting to terminate fuzzing process (Wrapper name: {wrapper_name}, PID: {process.pid})...")
                 process.terminate()
 
                 time.sleep(5)
                 if process.poll() is None:
-                    logging.error(f"Процесс {process.pid} не завершился, принудительное завершение...")
+                    logging.error(f"Process {process.pid} did not terminate, forcing termination...")
                     process.kill()
 
-                logging.info(f"Процесс {process.pid} успешно завершён.")
+                logging.info(f"Process {process.pid} successfully terminated.")
 
             except Exception as e:
-                logging.error(f"Ошибка при завершении процесса {process.pid} (Wrapper ID: {wrapper_id}): {e}", exc_info=True)
+                logging.error(f"Error terminating process {process.pid} (Wrapper ID: {wrapper_id}): {e}", exc_info=True)

@@ -6,12 +6,12 @@ from fuzzflow.src.utils import over_memory_threshold
 
 class ResourceMonitor:
     """
-    Класс для мониторинга ресурсов в отдельном потоке.
+    Class for monitoring resources in a separate thread.
     """
 
     def __init__(self, memory_limit):
         """
-        :param memory_limit: Лимит памяти в мегабайтах (int).
+        :param memory_limit: Memory limit in megabytes (int).
         """
         self.memory_limit = memory_limit
         self.running = False
@@ -21,7 +21,7 @@ class ResourceMonitor:
 
     def start(self):
         """
-        Запускает мониторинг ресурсов в отдельном потоке.
+        Starts resource monitoring in a separate thread.
         """
         if not self.running:
             self.running = True
@@ -30,7 +30,7 @@ class ResourceMonitor:
 
     def stop(self):
         """
-        Останавливает мониторинг ресурсов, дожидается завершения потока.
+        Stops resource monitoring, waits for thread completion.
         """
         self.running = False
         if self.monitor_thread is not None:
@@ -39,26 +39,26 @@ class ResourceMonitor:
 
     def can_start_new_process(self) -> bool:
         """
-        Проверяет, можем ли мы безопасно запустить новый процесс.
-        Возвращает True, если текущая память не превышает лимит; False иначе.
+        Checks if we can safely start a new process.
+        Returns True if current memory usage is below the limit; False otherwise.
         """
         return not over_memory_threshold(self.memory_limit)
 
     def _monitor_loop(self):
         """
-        Внутренний метод, работающий в фоновом потоке.
-        Периодически проверяет текущее использование памяти.
-        При необходимости может инициировать kill-процессы.
+        Internal method running in background thread.
+        Periodically checks current memory usage.
+        May initiate kill processes if necessary.
         """
         while self.running:
             mem_info = psutil.virtual_memory()
             used_mb = mem_info.used // (1024 * 1024)
 
-            # Простая логика 80%: если мы превысили 80% лимита,
-            # можно завершить какой-нибудь процесс фаззинга.
+            # Simple 80% logic: if we exceed 80% of the limit,
+            # we can terminate some fuzzing process.
             threshold_90 = int(self.memory_limit * 0.8)
             if used_mb > threshold_90:
-                # TODO: Реализовать логику, как убиваем процесс
+                # TODO: Implement process termination logic
                 pass
 
             time.sleep(10)

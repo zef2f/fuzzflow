@@ -14,12 +14,12 @@ logging.basicConfig(
 class Orchestrator:
     def __init__(self, wrapper_names, memory_limit, single_fuzz_script, other_params=None):
         """
-        Инициализация оркестратора fuzzflow.
+        Initialize the fuzzflow orchestrator.
 
-        :param wrapper_names: Список оберток для фаззинга в JSON формате.
-        :param memory_limit: Лимит памяти в МБ (int).
-        :param single_fuzz_script: Путь к скрипту, который запускает одиночный фаззинг-процесс.
-        :param other_params: Дополнительные параметры (необязательно).
+        :param wrapper_names: List of fuzzing wrappers in JSON format.
+        :param memory_limit: Memory limit in MB (int).
+        :param single_fuzz_script: Path to the script that runs a single fuzzing process.
+        :param other_params: Additional parameters (optional).
         """
         self.wrapper_names = wrapper_names
         self.memory_limit = memory_limit
@@ -28,68 +28,68 @@ class Orchestrator:
 
         self.wrappers = json.loads(wrapper_names)
 
-        logging.debug("Создание монитор ресурсов...")
+        logging.debug("Creating resource monitor...")
         self.resource_monitor = ResourceMonitor(memory_limit=self.memory_limit)
 
-        logging.debug("Создание менеджера процессов...")
+        logging.debug("Creating process manager...")
         self.process_manager = ProcessManager(single_fuzz_script=self.single_fuzz_script)
 
-        logging.debug("Создание коллектора результатов...")
+        logging.debug("Creating result collector...")
         self.result_collector = ResultCollector()
 
         self.active_tasks = []
 
     def run(self):
         """
-        Основной метод. Запускает мониторинг ресурсов, запускает фаззинг для каждой
-        обертки (если позволяют ресурсы), собирает результаты и формирует финальный отчет.
+        Main method. Starts resource monitoring, runs fuzzing for each
+        wrapper (if resources allow), collects results and generates final report.
         """
-        logging.info("Запуск фаззинга...")
+        logging.info("Starting fuzzing...")
 
-        logging.debug("Запускаем монитор ресурсов...")
+        logging.debug("Starting resource monitor...")
         self.resource_monitor.start()
 
         for wrapper in self.wrappers:
-            logging.info(f"Запуск фаззинга для {wrapper}")
+            logging.info(f"Starting fuzzing for {wrapper}")
 
-            # Пока нельзя запускать из-за лимитов памяти – ожидаем
+            # Wait if we can't start due to memory limits
             while not self.resource_monitor.can_start_new_process():
-                logging.warning("Недостаточно ресурсов для нового процесса. Ожидание...")
+                logging.warning("Insufficient resources for new process. Waiting...")
                 self._wait_some_seconds(2)
 
-            logging.debug(f"Запуск процесса фаззинга для обертки {wrapper}")
+            logging.debug(f"Starting fuzzing process for wrapper {wrapper}")
             proc_info = self.process_manager.start_fuzzing(wrapper)
 
             self.active_tasks.append(proc_info)
-            logging.info(f"Фаззинг-процесс запущен (PID: {proc_info['process'].pid})")
+            logging.info(f"Fuzzing process started (PID: {proc_info['process'].pid})")
 
-            # Проверяем, завершился ли кто-то из ранее запущенных процессов
+            # Check if any previously started processes have completed
             self._collect_finished_processes()
             self._wait_some_seconds(5)
 
 
-        # Ждем, пока все активные процессы завершатся
+        # Wait for all active processes to complete
         while self._there_are_still_active_processes():
-            logging.info("Ожидание завершения всех процессов...")
+            logging.info("Waiting for all processes to complete...")
             self._collect_finished_processes()
             self._wait_some_seconds(5)
 
-        logging.info("Останавливаем монитор ресурсов...")
+        logging.info("Stopping resource monitor...")
         self.resource_monitor.stop()
 
-        logging.info("Формируем итоговый отчёт...")
+        logging.info("Generating final report...")
         self.result_collector.final_report()
-        logging.info("Фаззинг завершён.")
+        logging.info("Fuzzing completed.")
 
     def _collect_finished_processes(self):
         """
-        Проверяем, какие процессы завершились, собираем результаты и
-        удаляем их из self.active_tasks.
+        Check which processes have completed, collect results and
+        remove them from self.active_tasks.
         """
         finished_list = []
         for proc_info in self.active_tasks:
             if self._process_has_terminated(proc_info):
-                logging.info(f"Процесс {proc_info['process'].pid} завершился, собираем результаты...")
+                logging.info(f"Process {proc_info['process'].pid} completed, collecting results...")
                 self.result_collector.collect(proc_info)
                 finished_list.append(proc_info)
 
@@ -97,36 +97,36 @@ class Orchestrator:
 
     def _process_has_terminated(self, proc_info):
         """
-        Проверяет, завершился ли subprocess.
-        :param proc_info: Информация о процессе (dict).
-        :return: True, если завершился; False, иначе.
+        Check if subprocess has terminated.
+        :param proc_info: Process information (dict).
+        :return: True if terminated; False otherwise.
         """
         process = proc_info["process"]
         if process.poll() is not None:
-            logging.debug(f"Процесс {process.pid} завершился с кодом {process.returncode}.")
+            logging.debug(f"Process {process.pid} completed with code {process.returncode}.")
             return True
         return False
 
     def _remove_finished_from_active(self, active_list, finished_list):
         """
-        Удаляем завершенные процессы из общего списка активных.
-        :param active_list: Исходный список активных процессов.
-        :param finished_list: Список процессов, которые завершились.
-        :return: Обновленный список активных процессов.
+        Remove completed processes from the list of active processes.
+        :param active_list: Original list of active processes.
+        :param finished_list: List of completed processes.
+        :return: Updated list of active processes.
         """
         return [p for p in active_list if p not in finished_list]
 
     def _there_are_still_active_processes(self):
         """
-        Проверка, есть ли еще активные (незавершенные) процессы в self.active_tasks.
+        Check if there are still active (uncompleted) processes in self.active_tasks.
         """
         active_count = len(self.active_tasks)
-        logging.debug(f"Активных процессов: {active_count}")
+        logging.debug(f"Active processes: {active_count}")
         return active_count > 0
 
     def _wait_some_seconds(self, seconds):
         """
-        Промежуточное ожидание (задержка) для снижения нагрузки в циклах.
+        Intermediate wait (delay) to reduce load in loops.
         """
-        logging.debug(f"Ожидание {seconds} секунд...")
+        logging.debug(f"Waiting {seconds} seconds...")
         time.sleep(seconds)

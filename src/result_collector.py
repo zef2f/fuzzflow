@@ -4,7 +4,7 @@ import time
 
 class ResultCollector:
     """
-    Класс для сбора результатов работы процессов фаззинга.
+    Class for collecting fuzzing process results.
     """
 
     def __init__(self):
@@ -12,9 +12,9 @@ class ResultCollector:
 
     def collect(self, proc_info):
         """
-        Собирает информацию о завершившемся процессе:
+        Collect information about completed process:
         - returncode;
-        - время выполнения;
+        - execution time;
         """
         process = proc_info.get("process")
         wrapper_name = proc_info.get("wrapper_name", "unknown wrapper")
@@ -37,7 +37,7 @@ class ResultCollector:
 
     def final_report(self):
         """
-        По окончании всего фаззинга формирует общий отчёт.
+        Generate final report after all fuzzing is complete.
         """
         print("\n========== Fuzzflow Results ==========")
         for entry in self.results:

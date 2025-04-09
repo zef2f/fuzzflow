@@ -8,11 +8,11 @@ import argparse
 
 def parse_cli_args():
     """
-    Парсит аргументы командной строки.
-    Возвращает объект с полями:
-      wrapper_names (str - json формат) – список оберток в json формате;
-      memory_limit (int) – лимит памяти (в MB);
-      single_fuzz_script (str) – путь к скрипту для запуска одного фаззинга.
+    Parse command line arguments.
+    Returns an object with fields:
+      wrapper_names (str - json format) – list of wrappers in json format;
+      memory_limit (int) – memory limit (in MB);
+      single_fuzz_script (str) – path to the script that runs a single fuzzing process.
     """
     parser = argparse.ArgumentParser(
         description='Fuzzflow orchestrator CLI arguments'
@@ -38,10 +38,10 @@ def parse_cli_args():
 
 def over_memory_threshold(memory_limit_mb):
     """
-    Проверяет, превышено ли текущее использование памяти заданный лимит (в MB).
-    Возвращает True, если используется > memory_limit_mb.
+    Check if current memory usage exceeds the specified limit (in MB).
+    Returns True if usage > memory_limit_mb.
     """
     mem_info = psutil.virtual_memory()
     used_mb = mem_info.used // (1024 * 1024)
-    # Логика 80%: если мы превысили 80% от выделенной памяти, то возвращается true
+    # 80% logic: if we exceed 80% of allocated memory, return true
     return used_mb > (memory_limit_mb * 0.8)

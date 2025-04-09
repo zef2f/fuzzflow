@@ -13,12 +13,12 @@ logging.basicConfig(
 
 def main():
     """
-    Точка входа в fuzzflow.
-    Считывает параметры CLI и запускает Orchestrator.
+    Entry point for fuzzflow.
+    Reads CLI parameters and starts the Orchestrator.
     """
 
     cli_args = parse_cli_args()
-    logging.debug(f"Аргументы получены: wrapper_names={cli_args.wrapper_names}, "
+    logging.debug(f"Arguments received: wrapper_names={cli_args.wrapper_names}, "
                   f"memory_limit={cli_args.memory_limit}, "
                   f"single_fuzz_script={cli_args.single_fuzz_script}")
 
@@ -32,7 +32,7 @@ def main():
         orchestrator.run()
 
     except Exception as e:
-        logging.error(f"Ошибка в работе fuzzflow: {e}", exc_info=True)
+        logging.error(f"Error in fuzzflow operation: {e}", exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":
