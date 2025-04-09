@@ -11,11 +11,6 @@ class ResultCollector:
         self.results = []
 
     def collect(self, proc_info):
-        """
-        Collect information about completed process:
-        - returncode;
-        - execution time;
-        """
         process = proc_info.get("process")
         wrapper_name = proc_info.get("wrapper_name", "unknown wrapper")
         start_time = proc_info.get("start_time", 0)
@@ -36,9 +31,6 @@ class ResultCollector:
         self.results.append(result_entry)
 
     def final_report(self):
-        """
-        Generate final report after all fuzzing is complete.
-        """
         print("\n========== Fuzzflow Results ==========")
         for entry in self.results:
             print(f"Wrapper name: {entry['wrapper_name']}, ExitCode: {entry['exit_code']}, "

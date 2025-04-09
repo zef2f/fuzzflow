@@ -14,16 +14,10 @@ class ProcessManager:
     """
 
     def __init__(self, single_fuzz_script):
-        """
-        :param single_fuzz_script: Path to the script that runs a specific fuzz process.
-        """
         self.single_fuzz_script = single_fuzz_script
         logging.info(f"ProcessManager initialized with fuzzing script: {single_fuzz_script}")
 
     def start_fuzzing(self, wrapper):
-        """
-        Start a fuzzing process based on wrapper name.
-        """
         full_cmd = [self.single_fuzz_script] + [wrapper]
         logging.info(f"Starting fuzzing for {wrapper}) with command: {' '.join(full_cmd)}")
 
@@ -48,10 +42,6 @@ class ProcessManager:
             return None
 
     def kill_fuzzing(self, proc_info):
-        """
-        Terminate the process corresponding to the provided proc_info.
-        :param proc_info: dictionary of the form { "process": <subprocess.Popen>, ... }
-        """
         process = proc_info.get("process")
         wrapper_name = proc_info.get("wrapper_name", "unknown")
 

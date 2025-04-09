@@ -12,11 +12,6 @@ logging.basicConfig(
 )
 
 def main():
-    """
-    Entry point for fuzzflow.
-    Reads CLI parameters and starts the Orchestrator.
-    """
-
     cli_args = parse_cli_args()
     logging.debug(f"Arguments received: wrapper_names={cli_args.wrapper_names}, "
                   f"memory_limit={cli_args.memory_limit}, "
