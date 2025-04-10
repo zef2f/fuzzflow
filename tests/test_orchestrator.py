@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 import json
 from src.orchestrator import Orchestrator
+from src.utils import DEFAULT_WAIT_TIME_SECONDS
 
 @pytest.fixture
 def mock_wrapper_names():
@@ -44,7 +45,25 @@ def test_orchestrator_initialization(orchestrator, mock_wrapper_names):
     assert orchestrator.wrapper_names == mock_wrapper_names
     assert orchestrator.memory_limit == 1000
     assert orchestrator.single_fuzz_script == 'test_script.py'
+    assert orchestrator.wait_time == DEFAULT_WAIT_TIME_SECONDS
     assert orchestrator.active_tasks == []
+
+def test_orchestrator_custom_wait_time(mock_wrapper_names):
+    """Тест инициализации Orchestrator с пользовательским временем ожидания"""
+    with patch('src.orchestrator.ResourceMonitor') as mock_resource_monitor, \
+         patch('src.orchestrator.ProcessManager') as mock_process_manager, \
+         patch('src.orchestrator.ResultCollector') as mock_result_collector:
+        
+        custom_wait_time = 30
+        orchestrator = Orchestrator(
+            wrapper_names=mock_wrapper_names,
+            memory_limit=1000,
+            single_fuzz_script='test_script.py',
+            wait_time=custom_wait_time
+        )
+        
+        assert orchestrator.wait_time == custom_wait_time
+        mock_resource_monitor.assert_called_once_with(memory_limit=1000, wait_time=custom_wait_time)
 
 def test_process_has_terminated(orchestrator, mock_proc_info):
     """Тест проверки завершения процесса"""

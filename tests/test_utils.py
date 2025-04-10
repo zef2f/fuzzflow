@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 import json
 import psutil
-from src.utils import parse_cli_args, over_memory_threshold
+from src.utils import parse_cli_args, over_memory_threshold, DEFAULT_WAIT_TIME_SECONDS
 
 def test_parse_cli_args_all_required():
     """Тест парсинга всех обязательных аргументов"""
@@ -19,6 +19,25 @@ def test_parse_cli_args_all_required():
         assert args.wrapper_names == '["wrapper1", "wrapper2"]'
         assert args.memory_limit == 1024
         assert args.single_fuzz_script == 'fuzz.py'
+        assert args.wait_time == DEFAULT_WAIT_TIME_SECONDS
+
+def test_parse_cli_args_with_wait_time():
+    """Тест парсинга с пользовательским временем ожидания"""
+    test_args = [
+        'script.py',
+        '--wrapper_names', '["wrapper1", "wrapper2"]',
+        '--memory_limit', '1024',
+        '--single_fuzz_script', 'fuzz.py',
+        '--wait_time', '30'
+    ]
+    
+    with patch('sys.argv', test_args):
+        args = parse_cli_args()
+        
+        assert args.wrapper_names == '["wrapper1", "wrapper2"]'
+        assert args.memory_limit == 1024
+        assert args.single_fuzz_script == 'fuzz.py'
+        assert args.wait_time == 30
 
 def test_parse_cli_args_short_form():
     """Тест парсинга аргументов в короткой форме"""
@@ -26,7 +45,8 @@ def test_parse_cli_args_short_form():
         'script.py',
         '-w', '["wrapper1"]',
         '-m', '512',
-        '-s', 'fuzz.py'
+        '-s', 'fuzz.py',
+        '-t', '45'
     ]
     
     with patch('sys.argv', test_args):
@@ -35,6 +55,35 @@ def test_parse_cli_args_short_form():
         assert args.wrapper_names == '["wrapper1"]'
         assert args.memory_limit == 512
         assert args.single_fuzz_script == 'fuzz.py'
+        assert args.wait_time == 45
+
+def test_parse_cli_args_invalid_wait_time():
+    """Тест некорректного значения wait_time"""
+    test_args = [
+        'script.py',
+        '--wrapper_names', '["wrapper1"]',
+        '--memory_limit', '1024',
+        '--single_fuzz_script', 'fuzz.py',
+        '--wait_time', 'invalid'
+    ]
+    
+    with patch('sys.argv', test_args), \
+         pytest.raises(SystemExit):
+        parse_cli_args()
+
+def test_parse_cli_args_negative_wait_time():
+    """Тест отрицательного значения wait_time"""
+    test_args = [
+        'script.py',
+        '--wrapper_names', '["wrapper1"]',
+        '--memory_limit', '1024',
+        '--single_fuzz_script', 'fuzz.py',
+        '--wait_time', '-30'
+    ]
+    
+    with patch('sys.argv', test_args):
+        args = parse_cli_args()
+        assert args.wait_time == -30  # argparse не проверяет отрицательные значения
 
 def test_parse_cli_args_missing_wrapper_names():
     """Тест отсутствия обязательного аргумента wrapper_names"""

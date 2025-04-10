@@ -2,15 +2,16 @@ import time
 import threading
 import psutil
 
-from fuzzflow.src.utils import over_memory_threshold
+from fuzzflow.src.utils import over_memory_threshold, DEFAULT_WAIT_TIME_SECONDS
 
 class ResourceMonitor:
     """
     Class for monitoring resources in a separate thread.
     """
 
-    def __init__(self, memory_limit):
+    def __init__(self, memory_limit, wait_time=DEFAULT_WAIT_TIME_SECONDS):
         self.memory_limit = memory_limit
+        self.wait_time = wait_time
         self.running = False
         self.monitor_thread = None
 
@@ -43,4 +44,4 @@ class ResourceMonitor:
                 # TODO: Implement process termination logic
                 pass
 
-            time.sleep(60)
+            time.sleep(self.wait_time)

@@ -4,6 +4,7 @@ import json
 from fuzzflow.src.resource_monitor import ResourceMonitor
 from fuzzflow.src.process_manager import ProcessManager
 from fuzzflow.src.result_collector import ResultCollector
+from fuzzflow.src.utils import DEFAULT_WAIT_TIME_SECONDS
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -12,11 +13,12 @@ logging.basicConfig(
 )
 
 class Orchestrator:
-    def __init__(self, wrapper_names, memory_limit, single_fuzz_script, other_params=None):
+    def __init__(self, wrapper_names, memory_limit, single_fuzz_script, other_params=None, wait_time=DEFAULT_WAIT_TIME_SECONDS):
         self.wrapper_names = wrapper_names
         self.memory_limit = memory_limit
         self.single_fuzz_script = single_fuzz_script
         self.other_params = other_params
+        self.wait_time = wait_time
 
         self.wrappers = json.loads(wrapper_names)
 
@@ -42,7 +44,7 @@ class Orchestrator:
 
             while not self.resource_monitor.can_start_new_process():
                 logging.warning("Insufficient resources for new process. Waiting...")
-                self._wait_some_seconds(60)
+                self._wait_some_seconds(self.wait_time)
 
             logging.debug(f"Starting fuzzing process for wrapper {wrapper}")
             proc_info = self.process_manager.start_fuzzing(wrapper)
@@ -51,13 +53,13 @@ class Orchestrator:
             logging.info(f"Fuzzing process started (PID: {proc_info['process'].pid})")
 
             self._collect_finished_processes()
-            self._wait_some_seconds(60)
+            self._wait_some_seconds(self.wait_time)
 
 
         while self._there_are_still_active_processes():
             logging.info("Waiting for all processes to complete...")
             self._collect_finished_processes()
-            self._wait_some_seconds(60)
+            self._wait_some_seconds(self.wait_time)
 
         logging.info("Stopping resource monitor...")
         self.resource_monitor.stop()

@@ -4,6 +4,8 @@ import json
 import psutil
 import argparse
 
+DEFAULT_WAIT_TIME_SECONDS = 60
+
 def parse_cli_args():
     parser = argparse.ArgumentParser(
         description='Fuzzflow orchestrator CLI arguments'
@@ -23,6 +25,12 @@ def parse_cli_args():
         '-s', '--single_fuzz_script',
         required=True,
         help='Path to the script that runs a single fuzzing process.'
+    )
+    parser.add_argument(
+        '-t', '--wait_time',
+        type=int,
+        default=DEFAULT_WAIT_TIME_SECONDS,
+        help='Wait time between operations in seconds.'
     )
 
     return parser.parse_args()
