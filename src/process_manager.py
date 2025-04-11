@@ -17,9 +17,9 @@ class ProcessManager:
         self.single_fuzz_script = single_fuzz_script
         logging.info(f"ProcessManager initialized with fuzzing script: {single_fuzz_script}")
 
-    def start_fuzzing(self, wrapper):
-        full_cmd = [self.single_fuzz_script] + [wrapper]
-        logging.info(f"Starting fuzzing for {wrapper}) with command: {' '.join(full_cmd)}")
+    def start_fuzzing(self, harness):
+        full_cmd = [self.single_fuzz_script] + [harness]
+        logging.info(f"Starting fuzzing for {harness}) with command: {' '.join(full_cmd)}")
 
         try:
             process = subprocess.Popen(
@@ -28,26 +28,26 @@ class ProcessManager:
                 stderr=subprocess.PIPE,
                 text=True
             )
-            logging.info(f"Fuzzing process started (Wrapper name: {wrapper}, PID: {process.pid})")
+            logging.info(f"Fuzzing process started (Harness name: {harness}, PID: {process.pid})")
 
             proc_info = {
-                "wrapper_name": wrapper,
+                "harness_name": harness,
                 "process": process,
                 "start_time": time.time(),
             }
             return proc_info
 
         except Exception as e:
-            logging.error(f"Error starting fuzzing (Wrapper ID: {wrapper_id}): {e}", exc_info=True)
+            logging.error(f"Error starting fuzzing (Harness ID: {harness}): {e}", exc_info=True)
             return None
 
     def kill_fuzzing(self, proc_info):
         process = proc_info.get("process")
-        wrapper_name = proc_info.get("wrapper_name", "unknown")
+        harness_name = proc_info.get("harness_name", "unknown")
 
         if process and process.poll() is None:
             try:
-                logging.warning(f"Attempting to terminate fuzzing process (Wrapper name: {wrapper_name}, PID: {process.pid})...")
+                logging.warning(f"Attempting to terminate fuzzing process (Harness name: {harness_name}, PID: {process.pid})...")
                 process.terminate()
 
                 time.sleep(5)
@@ -58,4 +58,4 @@ class ProcessManager:
                 logging.info(f"Process {process.pid} successfully terminated.")
 
             except Exception as e:
-                logging.error(f"Error terminating process {process.pid} (Wrapper ID: {wrapper_id}): {e}", exc_info=True)
+                logging.error(f"Error terminating process {process.pid} (Harness ID: {harness}): {e}", exc_info=True)

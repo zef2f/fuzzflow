@@ -13,7 +13,7 @@ class ResultCollector:
 
     def collect(self, proc_info):
         process = proc_info.get("process")
-        wrapper_name = proc_info.get("wrapper_name") or "unknown"
+        harness_name = proc_info.get("harness_name") or "unknown"
         start_time = proc_info.get("start_time") or 0
         end_time = time.time()
         duration = end_time - start_time
@@ -38,7 +38,7 @@ class ResultCollector:
             reason = "No process object"
 
         result_entry = {
-            "Wrapper": wrapper_name,
+            "Harness": harness_name,
             "Status": status,
             "Reason": reason if status != "OK" else "-",
             "Duration": f"{duration:.2f}s"

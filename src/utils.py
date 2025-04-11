@@ -9,7 +9,7 @@ DEFAULT_WAIT_TIME_SECONDS = 60
 
 def parse_cli_args():
     parser = argparse.ArgumentParser(description='Fuzzflow CLI')
-    parser.add_argument('-w', '--wrapper_names', required=True, help='JSON list of wrapper names')
+    parser.add_argument('-w', '--harness_names', required=True, help='JSON list of harness names')
     parser.add_argument('-m', '--memory_limit', type=int, required=True, help='Memory limit in MB')
     parser.add_argument('-s', '--single_fuzz_script', required=True, help='Script to run a single fuzzing process')
     parser.add_argument('-t', '--wait_time', type=int, default=DEFAULT_WAIT_TIME_SECONDS, help='Wait time in seconds')

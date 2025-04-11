@@ -13,14 +13,14 @@ logging.basicConfig(
 
 def main():
     cli_args = parse_cli_args()
-    logging.debug(f"Arguments received: wrapper_names={cli_args.wrapper_names}, "
+    logging.debug(f"Arguments received: harness_names={cli_args.harness_names}, "
                   f"memory_limit={cli_args.memory_limit}, "
                   f"single_fuzz_script={cli_args.single_fuzz_script}, "
                   f"wait_time={cli_args.wait_time}")
 
     try:
         orchestrator = Orchestrator(
-            wrapper_names=cli_args.wrapper_names,
+            harness_names=cli_args.harness_names,
             memory_limit=cli_args.memory_limit,
             single_fuzz_script=cli_args.single_fuzz_script,
             wait_time=cli_args.wait_time

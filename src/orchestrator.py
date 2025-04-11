@@ -13,14 +13,14 @@ logging.basicConfig(
 )
 
 class Orchestrator:
-    def __init__(self, wrapper_names, memory_limit, single_fuzz_script, wait_time=DEFAULT_WAIT_TIME_SECONDS, other_params=None):
-        self.wrapper_names = wrapper_names
+    def __init__(self, harness_names, memory_limit, single_fuzz_script, wait_time=DEFAULT_WAIT_TIME_SECONDS, other_params=None):
+        self.harness_names = harness_names
         self.memory_limit = memory_limit
         self.single_fuzz_script = single_fuzz_script
         self.wait_time = wait_time
         self.other_params = other_params
 
-        self.wrappers = json.loads(wrapper_names)
+        self.harnesses = json.loads(harness_names)
 
         logging.debug("Creating resource monitor...")
         self.resource_monitor = ResourceMonitor(memory_limit=self.memory_limit)
@@ -48,11 +48,11 @@ class Orchestrator:
         logging.info("Fuzzing completed.")
 
     def _start_fuzzing_loop(self):
-        for wrapper in self.wrappers:
-            logging.info(f"Starting fuzzing for {wrapper}")
+        for harness in self.harnesses:
+            logging.info(f"Starting fuzzing for {harness}")
             self._wait_until_resources_available()
 
-            proc_info = self.process_manager.start_fuzzing(wrapper)
+            proc_info = self.process_manager.start_fuzzing(harness)
             self.active_tasks.append(proc_info)
             self.resource_monitor.register_pid(proc_info["process"].pid)
 
