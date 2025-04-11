@@ -2,11 +2,11 @@ import time
 import threading
 import psutil
 
-from fuzzflow.src.utils import over_memory_threshold, DEFAULT_WAIT_TIME_SECONDS
+from fuzzflow.src.utils import over_memory_threshold, DEFAULT_WAIT_TIME_SECONDS, get_total_subprocess_memory
 
 class ResourceMonitor:
     """
-    Class for monitoring resources in a separate thread.
+    Monitors system memory usage and decides if new subprocesses can be launched.
     """
 
     def __init__(self, memory_limit, wait_time=DEFAULT_WAIT_TIME_SECONDS):
@@ -15,7 +15,15 @@ class ResourceMonitor:
         self.running = False
         self.monitor_thread = None
 
-        self.processes_to_kill = []
+        self.managed_pids = []
+
+    def register_pid(self, pid):
+        if pid not in self.managed_pids:
+            self.managed_pids.append(pid)
+
+    def unregister_pid(self, pid):
+        if pid in self.managed_pids:
+            self.managed_pids.remove(pid)
 
     def start(self):
         if not self.running:
@@ -30,18 +38,15 @@ class ResourceMonitor:
             self.monitor_thread = None
 
     def can_start_new_process(self) -> bool:
-        return not over_memory_threshold(self.memory_limit)
+        current_usage = get_total_subprocess_memory(self.managed_pids)
+        return current_usage < (self.memory_limit * 0.8)
 
     def _monitor_loop(self):
         while self.running:
-            mem_info = psutil.virtual_memory()
-            used_mb = mem_info.used // (1024 * 1024)
+            current_usage = get_total_subprocess_memory(self.managed_pids)
+            print(f"[ResourceMonitor] Total subprocess memory usage: {current_usage} MB")
 
-            # Simple 80% logic: if we exceed 80% of the limit,
-            # we can terminate some fuzzing process.
-            threshold_80 = int(self.memory_limit * 0.8)
-            if used_mb > threshold_80:
-                # TODO: Implement process termination logic
-                pass
+            if current_usage > (self.memory_limit * 0.9):
+                print("[ResourceMonitor] Memory usage critical. Consider killing some subprocesses!")
 
             time.sleep(self.wait_time)

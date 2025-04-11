@@ -13,12 +13,12 @@ logging.basicConfig(
 )
 
 class Orchestrator:
-    def __init__(self, wrapper_names, memory_limit, single_fuzz_script, other_params=None, wait_time=DEFAULT_WAIT_TIME_SECONDS):
+    def __init__(self, wrapper_names, memory_limit, single_fuzz_script, wait_time=DEFAULT_WAIT_TIME_SECONDS, other_params=None):
         self.wrapper_names = wrapper_names
         self.memory_limit = memory_limit
         self.single_fuzz_script = single_fuzz_script
-        self.other_params = other_params
         self.wait_time = wait_time
+        self.other_params = other_params
 
         self.wrappers = json.loads(wrapper_names)
 
@@ -35,44 +35,37 @@ class Orchestrator:
 
     def run(self):
         logging.info("Starting fuzzing...")
-
-        logging.debug("Starting resource monitor...")
         self.resource_monitor.start()
+        self._start_fuzzing_loop()
 
-        for wrapper in self.wrappers:
-            logging.info(f"Starting fuzzing for {wrapper}")
-
-            while not self.resource_monitor.can_start_new_process():
-                logging.warning("Insufficient resources for new process. Waiting...")
-                self._wait_some_seconds(self.wait_time)
-
-            logging.debug(f"Starting fuzzing process for wrapper {wrapper}")
-            proc_info = self.process_manager.start_fuzzing(wrapper)
-
-            self.active_tasks.append(proc_info)
-            logging.info(f"Fuzzing process started (PID: {proc_info['process'].pid})")
-
-            self._collect_finished_processes()
-            self._wait_some_seconds(self.wait_time)
-
-
-        while self._there_are_still_active_processes():
+        while self._has_active_tasks():
             logging.info("Waiting for all processes to complete...")
-            self._collect_finished_processes()
-            self._wait_some_seconds(self.wait_time)
+            self._cleanup_finished_tasks()
+            self._wait()
 
-        logging.info("Stopping resource monitor...")
         self.resource_monitor.stop()
-
-        logging.info("Generating final report...")
         self.result_collector.final_report()
         logging.info("Fuzzing completed.")
 
-    def _collect_finished_processes(self):
-        """
-        Check which processes have completed, collect results and
-        remove them from self.active_tasks.
-        """
+    def _start_fuzzing_loop(self):
+        for wrapper in self.wrappers:
+            logging.info(f"Starting fuzzing for {wrapper}")
+            self._wait_until_resources_available()
+
+            proc_info = self.process_manager.start_fuzzing(wrapper)
+            self.active_tasks.append(proc_info)
+            self.resource_monitor.register_pid(proc_info["process"].pid)
+
+            logging.info(f"Fuzzing process started (PID: {proc_info['process'].pid})")
+            self._cleanup_finished_tasks()
+            self._wait()
+
+    def _wait_until_resources_available(self):
+        while not self.resource_monitor.can_start_new_process():
+            logging.warning("Insufficient resources for new process. Waiting...")
+            self._wait()
+
+    def _cleanup_finished_tasks(self):
         finished_list = []
         for proc_info in self.active_tasks:
             if self._process_has_terminated(proc_info):
@@ -80,7 +73,7 @@ class Orchestrator:
                 self.result_collector.collect(proc_info)
                 finished_list.append(proc_info)
 
-        self.active_tasks = self._remove_finished_from_active(self.active_tasks, finished_list)
+        self.active_tasks = [p for p in self.active_tasks if p not in finished_list]
 
     def _process_has_terminated(self, proc_info):
         process = proc_info["process"]
@@ -89,14 +82,11 @@ class Orchestrator:
             return True
         return False
 
-    def _remove_finished_from_active(self, active_list, finished_list):
-        return [p for p in active_list if p not in finished_list]
-
-    def _there_are_still_active_processes(self):
+    def _has_active_tasks(self):
         active_count = len(self.active_tasks)
         logging.debug(f"Active processes: {active_count}")
         return active_count > 0
 
-    def _wait_some_seconds(self, seconds):
-        logging.debug(f"Waiting {seconds} seconds...")
-        time.sleep(seconds)
+    def _wait(self):
+        logging.debug(f"Waiting {self.wait_time} seconds...")
+        time.sleep(self.wait_time)
