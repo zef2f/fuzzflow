@@ -40,7 +40,7 @@ class ResultCollector:
         result_entry = {
             "Wrapper": wrapper_name,
             "Status": status,
-            "Reason": reason if status != "OK" else "",
+            "Reason": reason if status != "OK" else "-",
             "Duration": f"{duration:.2f}s"
         }
 
@@ -48,6 +48,10 @@ class ResultCollector:
 
     def final_report(self):
         if self.results:
-            print("\n" + tabulate(self.results, headers="keys", tablefmt="pipe", maxcolwidths=[None, None, 40, None]))
+            print("\n<!-- table:start -->\n" + tabulate(
+                self.results,
+                headers="keys", tablefmt="pipe",
+                maxcolwidths=[None, None, 40, None]) +
+                "\n<!-- table:end -->\n")
         else:
             print("No results collected.")
