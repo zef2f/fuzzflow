@@ -48,6 +48,6 @@ class ResultCollector:
 
     def final_report(self):
         if self.results:
-            print("\n" + tabulate(self.results, headers="keys", tablefmt="fancy_outline", maxcolwidths=[None, None, 40, None]))
+            print("\n" + tabulate(self.results, headers="keys", tablefmt="pipe", maxcolwidths=[None, None, 40, None]))
         else:
             print("No results collected.")
