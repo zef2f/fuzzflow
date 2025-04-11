@@ -8,7 +8,7 @@ def test_parse_cli_args_all_required():
     """Тест парсинга всех обязательных аргументов"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1", "wrapper2"]',
+        '--harness_names', '["harness1", "harness2"]',
         '--memory_limit', '1024',
         '--single_fuzz_script', 'fuzz.py'
     ]
@@ -16,7 +16,7 @@ def test_parse_cli_args_all_required():
     with patch('sys.argv', test_args):
         args = parse_cli_args()
         
-        assert args.wrapper_names == '["wrapper1", "wrapper2"]'
+        assert args.harness_names == '["harness1", "harness2"]'
         assert args.memory_limit == 1024
         assert args.single_fuzz_script == 'fuzz.py'
         assert args.wait_time == DEFAULT_WAIT_TIME_SECONDS
@@ -25,7 +25,7 @@ def test_parse_cli_args_with_wait_time():
     """Тест парсинга с пользовательским временем ожидания"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1", "wrapper2"]',
+        '--harness_names', '["harness1", "harness2"]',
         '--memory_limit', '1024',
         '--single_fuzz_script', 'fuzz.py',
         '--wait_time', '30'
@@ -34,7 +34,7 @@ def test_parse_cli_args_with_wait_time():
     with patch('sys.argv', test_args):
         args = parse_cli_args()
         
-        assert args.wrapper_names == '["wrapper1", "wrapper2"]'
+        assert args.harness_names == '["harness1", "harness2"]'
         assert args.memory_limit == 1024
         assert args.single_fuzz_script == 'fuzz.py'
         assert args.wait_time == 30
@@ -43,7 +43,7 @@ def test_parse_cli_args_short_form():
     """Тест парсинга аргументов в короткой форме"""
     test_args = [
         'script.py',
-        '-w', '["wrapper1"]',
+        '-w', '["harness1"]',
         '-m', '512',
         '-s', 'fuzz.py',
         '-t', '45'
@@ -52,7 +52,7 @@ def test_parse_cli_args_short_form():
     with patch('sys.argv', test_args):
         args = parse_cli_args()
         
-        assert args.wrapper_names == '["wrapper1"]'
+        assert args.harness_names == '["harness1"]'
         assert args.memory_limit == 512
         assert args.single_fuzz_script == 'fuzz.py'
         assert args.wait_time == 45
@@ -61,7 +61,7 @@ def test_parse_cli_args_invalid_wait_time():
     """Тест некорректного значения wait_time"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1"]',
+        '--harness_names', '["harness1"]',
         '--memory_limit', '1024',
         '--single_fuzz_script', 'fuzz.py',
         '--wait_time', 'invalid'
@@ -75,7 +75,7 @@ def test_parse_cli_args_negative_wait_time():
     """Тест отрицательного значения wait_time"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1"]',
+        '--harness_names', '["harness1"]',
         '--memory_limit', '1024',
         '--single_fuzz_script', 'fuzz.py',
         '--wait_time', '-30'
@@ -85,8 +85,8 @@ def test_parse_cli_args_negative_wait_time():
         args = parse_cli_args()
         assert args.wait_time == -30  # argparse не проверяет отрицательные значения
 
-def test_parse_cli_args_missing_wrapper_names():
-    """Тест отсутствия обязательного аргумента wrapper_names"""
+def test_parse_cli_args_missing_harness_names():
+    """Тест отсутствия обязательного аргумента harness_names"""
     test_args = [
         'script.py',
         '--memory_limit', '1024',
@@ -101,7 +101,7 @@ def test_parse_cli_args_missing_memory_limit():
     """Тест отсутствия обязательного аргумента memory_limit"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1"]',
+        '--harness_names', '["harness1"]',
         '--single_fuzz_script', 'fuzz.py'
     ]
     
@@ -113,7 +113,7 @@ def test_parse_cli_args_missing_single_fuzz_script():
     """Тест отсутствия обязательного аргумента single_fuzz_script"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1"]',
+        '--harness_names', '["harness1"]',
         '--memory_limit', '1024'
     ]
     
@@ -125,7 +125,7 @@ def test_parse_cli_args_invalid_memory_limit():
     """Тест некорректного значения memory_limit"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1"]',
+        '--harness_names', '["harness1"]',
         '--memory_limit', 'invalid',
         '--single_fuzz_script', 'fuzz.py'
     ]
@@ -138,7 +138,7 @@ def test_parse_cli_args_negative_memory_limit():
     """Тест отрицательного значения memory_limit"""
     test_args = [
         'script.py',
-        '--wrapper_names', '["wrapper1"]',
+        '--harness_names', '["harness1"]',
         '--memory_limit', '-1024',
         '--single_fuzz_script', 'fuzz.py'
     ]
@@ -148,10 +148,10 @@ def test_parse_cli_args_negative_memory_limit():
         assert args.memory_limit == -1024  # argparse не проверяет отрицательные значения
 
 def test_parse_cli_args_invalid_json():
-    """Тест некорректного JSON в wrapper_names"""
+    """Тест некорректного JSON в harness_names"""
     test_args = [
         'script.py',
-        '--wrapper_names', 'invalid json',
+        '--harness_names', 'invalid json',
         '--memory_limit', '1024',
         '--single_fuzz_script', 'fuzz.py'
     ]
@@ -159,7 +159,7 @@ def test_parse_cli_args_invalid_json():
     with patch('sys.argv', test_args):
         args = parse_cli_args()
         # argparse не проверяет валидность JSON, это должно проверяться позже
-        assert args.wrapper_names == 'invalid json'
+        assert args.harness_names == 'invalid json'
 
 @patch('psutil.virtual_memory')
 def test_over_memory_threshold_under_limit(mock_virtual_memory):

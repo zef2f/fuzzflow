@@ -26,11 +26,11 @@ def test_start_fuzzing_success(mock_popen, process_manager, mock_process):
     """Тест успешного запуска процесса фаззинга"""
     mock_popen.return_value = mock_process
     
-    result = process_manager.start_fuzzing('test_wrapper')
+    result = process_manager.start_fuzzing('test_harness')
     
     # Проверяем, что Popen был вызван с правильными параметрами
     mock_popen.assert_called_once_with(
-        ['test_fuzz.py', 'test_wrapper'],
+        ['test_fuzz.py', 'test_harness'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -38,7 +38,7 @@ def test_start_fuzzing_success(mock_popen, process_manager, mock_process):
     
     # Проверяем структуру возвращаемого результата
     assert result is not None
-    assert result['wrapper_name'] == 'test_wrapper'
+    assert result['harness_name'] == 'test_harness'
     assert result['process'] == mock_process
     assert 'start_time' in result
     assert isinstance(result['start_time'], float)
@@ -48,7 +48,7 @@ def test_start_fuzzing_failure(mock_popen, process_manager):
     """Тест неудачного запуска процесса фаззинга"""
     mock_popen.side_effect = Exception("Failed to start process")
     
-    result = process_manager.start_fuzzing('test_wrapper')
+    result = process_manager.start_fuzzing('test_harness')
     
     assert result is None
 
@@ -57,7 +57,7 @@ def test_kill_fuzzing_success(mock_sleep, process_manager, mock_process):
     """Тест успешного завершения процесса"""
     proc_info = {
         'process': mock_process,
-        'wrapper_name': 'test_wrapper'
+        'harness_name': 'test_harness'
     }
     
     # Симулируем успешное завершение после terminate
@@ -75,7 +75,7 @@ def test_kill_fuzzing_force_kill(mock_sleep, process_manager, mock_process):
     """Тест принудительного завершения процесса"""
     proc_info = {
         'process': mock_process,
-        'wrapper_name': 'test_wrapper'
+        'harness_name': 'test_harness'
     }
     
     # Симулируем, что процесс не завершился после terminate
@@ -92,7 +92,7 @@ def test_kill_fuzzing_already_terminated(process_manager, mock_process):
     """Тест попытки завершить уже завершенный процесс"""
     proc_info = {
         'process': mock_process,
-        'wrapper_name': 'test_wrapper'
+        'harness_name': 'test_harness'
     }
     
     # Симулируем уже завершенный процесс
@@ -105,7 +105,7 @@ def test_kill_fuzzing_already_terminated(process_manager, mock_process):
     mock_process.kill.assert_not_called()
 
 @patch('subprocess.Popen')
-def test_start_fuzzing_with_empty_wrapper(mock_popen, process_manager, mock_process):
+def test_start_fuzzing_with_empty_harness(mock_popen, process_manager, mock_process):
     """Тест запуска процесса с пустым именем обертки"""
     mock_popen.return_value = mock_process
     
@@ -120,7 +120,7 @@ def test_start_fuzzing_with_empty_wrapper(mock_popen, process_manager, mock_proc
     )
     
     assert result is not None
-    assert result['wrapper_name'] == ''
+    assert result['harness_name'] == ''
 
 def test_kill_fuzzing_with_invalid_proc_info(process_manager):
     """Тест попытки завершить процесс с некорректной информацией"""
@@ -135,16 +135,16 @@ def test_start_fuzzing_with_special_characters(mock_popen, process_manager, mock
     """Тест запуска процесса с специальными символами в имени обертки"""
     mock_popen.return_value = mock_process
     
-    special_wrapper = 'test@#$%^&*()_+'
-    result = process_manager.start_fuzzing(special_wrapper)
+    special_harness = 'test@#$%^&*()_+'
+    result = process_manager.start_fuzzing(special_harness)
     
     # Проверяем, что Popen был вызван с правильными параметрами
     mock_popen.assert_called_once_with(
-        ['test_fuzz.py', special_wrapper],
+        ['test_fuzz.py', special_harness],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
     )
     
     assert result is not None
-    assert result['wrapper_name'] == special_wrapper 
+    assert result['harness_name'] == special_harness 

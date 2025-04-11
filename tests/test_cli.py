@@ -5,7 +5,7 @@ from cli import main
 @pytest.fixture
 def mock_cli_args():
     return MagicMock(
-        wrapper_names='["wrapper1", "wrapper2"]',
+        harness_names='["harness1", "harness2"]',
         memory_limit=1024,
         single_fuzz_script='test_script.py'
     )
@@ -20,7 +20,7 @@ def test_main_function_success(mock_cli_args):
         
         # Проверяем, что Orchestrator был создан с правильными параметрами
         mock_orchestrator.assert_called_once_with(
-            wrapper_names=mock_cli_args.wrapper_names,
+            harness_names=mock_cli_args.harness_names,
             memory_limit=mock_cli_args.memory_limit,
             single_fuzz_script=mock_cli_args.single_fuzz_script
         )
@@ -52,12 +52,12 @@ def test_parse_cli_args_missing_required():
         parse_cli_args()
 
 def test_parse_cli_args_invalid_json():
-    """Тест некорректного JSON в wrapper_names"""
+    """Тест некорректного JSON в harness_names"""
     from src.utils import parse_cli_args
     
     with patch('sys.argv', [
         'fuzzflow.py',
-        '--wrapper-names', 'invalid json',
+        '--harness-names', 'invalid json',
         '--memory-limit', '1024',
         '--single-fuzz-script', 'test_script.py'
     ]), \
@@ -70,7 +70,7 @@ def test_parse_cli_args_invalid_memory():
     
     with patch('sys.argv', [
         'fuzzflow.py',
-        '--wrapper-names', '["wrapper1"]',
+        '--harness-names', '["harness1"]',
         '--memory-limit', '-1',
         '--single-fuzz-script', 'test_script.py'
     ]), \
@@ -83,7 +83,7 @@ def test_parse_cli_args_missing_script():
     
     with patch('sys.argv', [
         'fuzzflow.py',
-        '--wrapper-names', '["wrapper1"]',
+        '--harness-names', '["harness1"]',
         '--memory-limit', '1024'
     ]), \
          pytest.raises(SystemExit):
@@ -95,12 +95,12 @@ def test_parse_cli_args_valid():
     
     with patch('sys.argv', [
         'fuzzflow.py',
-        '--wrapper-names', '["wrapper1", "wrapper2"]',
+        '--harness-names', '["harness1", "harness2"]',
         '--memory-limit', '1024',
         '--single-fuzz-script', 'test_script.py'
     ]):
         args = parse_cli_args()
         
-        assert args.wrapper_names == '["wrapper1", "wrapper2"]'
+        assert args.harness_names == '["harness1", "harness2"]'
         assert args.memory_limit == 1024
         assert args.single_fuzz_script == 'test_script.py'
