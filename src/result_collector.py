@@ -1,6 +1,7 @@
 import os
 import json
 import time
+from tabulate import tabulate, _table_formats
 
 class ResultCollector:
     """
@@ -12,29 +13,41 @@ class ResultCollector:
 
     def collect(self, proc_info):
         process = proc_info.get("process")
-        wrapper_name = proc_info.get("wrapper_name", "unknown wrapper")
-        start_time = proc_info.get("start_time", 0)
+        wrapper_name = proc_info.get("wrapper_name") or "unknown"
+        start_time = proc_info.get("start_time") or 0
         end_time = time.time()
         duration = end_time - start_time
 
-        if process and process.poll() is not None:
-            exit_code = process.returncode
+        status = "UNKNOWN"
+        reason = ""
+        if process:
+            returncode = process.poll()
+            if returncode is not None:
+                if returncode == 0:
+                    status = "OK"
+                else:
+                    status = "FAIL"
+                    try:
+                        _, stderr = process.communicate(timeout=1)
+                        reason = stderr.strip().splitlines()[-1] if stderr else "Non-zero exit code"
+                    except Exception:
+                        reason = "Failed to capture stderr"
+            else:
+                reason = "Process still running?"
         else:
-            exit_code = -999
+            reason = "No process object"
 
         result_entry = {
-            "wrapper_name": wrapper_name,
-            "exit_code": exit_code,
-            "duration_sec": duration
+            "Wrapper": wrapper_name,
+            "Status": status,
+            "Reason": reason if status != "OK" else "",
+            "Duration": f"{duration:.2f}s"
         }
 
         self.results.append(result_entry)
 
     def final_report(self):
-        print("\n========== Fuzzflow Results ==========")
-        for entry in self.results:
-            print(f"Wrapper name: {entry['wrapper_name']}, ExitCode: {entry['exit_code']}, "
-                  f"Duration: {entry['duration_sec']:.2f}s")
-        print("======================================")
-
-
+        if self.results:
+            print("\n" + tabulate(self.results, headers="keys", tablefmt="fancy_outline", maxcolwidths=[None, None, 40, None]))
+        else:
+            print("No results collected.")
