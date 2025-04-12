@@ -18,7 +18,7 @@ class ProcessManager:
         logging.info(f"ProcessManager initialized with fuzzing script: {single_fuzz_script}")
 
     def start_fuzzing(self, harness):
-        full_cmd = [self.single_fuzz_script] + [harness]
+        full_cmd = [self.single_fuzz_script] + ["--harness", harness]
         logging.info(f"Starting fuzzing for {harness}) with command: {' '.join(full_cmd)}")
 
         try:
