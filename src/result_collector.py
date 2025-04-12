@@ -3,6 +3,7 @@ import json
 import time
 from tabulate import tabulate, _table_formats
 
+
 class ResultCollector:
     """
     Class for collecting fuzzing process results.
@@ -29,7 +30,11 @@ class ResultCollector:
                     status = "FAIL"
                     try:
                         _, stderr = process.communicate(timeout=1)
-                        reason = stderr.strip().splitlines()[-1] if stderr else "Non-zero exit code"
+                        reason = (
+                            stderr.strip().splitlines()[-1]
+                            if stderr
+                            else "Non-zero exit code"
+                        )
                     except Exception:
                         reason = "Failed to capture stderr"
             else:
@@ -41,17 +46,22 @@ class ResultCollector:
             "Harness": harness_name,
             "Status": status,
             "Reason": reason if status != "OK" else "-",
-            "Duration": f"{duration:.2f}s"
+            "Duration": f"{duration:.2f}s",
         }
 
         self.results.append(result_entry)
 
     def final_report(self):
         if self.results:
-            print("\n<!-- table:start -->\n" + tabulate(
-                self.results,
-                headers="keys", tablefmt="pipe",
-                maxcolwidths=[None, None, 40, None]) +
-                "\n<!-- table:end -->\n")
+            print(
+                "\n<!-- table:start -->\n"
+                + tabulate(
+                    self.results,
+                    headers="keys",
+                    tablefmt="pipe",
+                    maxcolwidths=[None, None, 40, None],
+                )
+                + "\n<!-- table:end -->\n"
+            )
         else:
             print("No results collected.")

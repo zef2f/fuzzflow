@@ -9,11 +9,19 @@ from fuzzflow.src.utils import DEFAULT_WAIT_TIME_SECONDS
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+
 class Orchestrator:
-    def __init__(self, harness_names, memory_limit, single_fuzz_script, wait_time=DEFAULT_WAIT_TIME_SECONDS, other_params=None):
+    def __init__(
+        self,
+        harness_names,
+        memory_limit,
+        single_fuzz_script,
+        wait_time=DEFAULT_WAIT_TIME_SECONDS,
+        other_params=None,
+    ):
         self.harness_names = harness_names
         self.memory_limit = memory_limit
         self.single_fuzz_script = single_fuzz_script
@@ -26,7 +34,9 @@ class Orchestrator:
         self.resource_monitor = ResourceMonitor(memory_limit=self.memory_limit)
 
         logging.debug("Creating process manager...")
-        self.process_manager = ProcessManager(single_fuzz_script=self.single_fuzz_script)
+        self.process_manager = ProcessManager(
+            single_fuzz_script=self.single_fuzz_script
+        )
 
         logging.debug("Creating result collector...")
         self.result_collector = ResultCollector()
@@ -56,29 +66,39 @@ class Orchestrator:
             self.active_tasks.append(proc_info)
             self.resource_monitor.register_pid(proc_info["process"].pid)
 
-            logging.info(f"Fuzzing process started (PID: {proc_info['process'].pid})")
+            logging.info(
+                f"Fuzzing process started (PID: {proc_info['process'].pid})"
+            )
             self._cleanup_finished_tasks()
             self._wait()
 
     def _wait_until_resources_available(self):
         while not self.resource_monitor.can_start_new_process():
-            logging.warning("Insufficient resources for new process. Waiting...")
+            logging.warning(
+                "Insufficient resources for new process. Waiting..."
+            )
             self._wait()
 
     def _cleanup_finished_tasks(self):
         finished_list = []
         for proc_info in self.active_tasks:
             if self._process_has_terminated(proc_info):
-                logging.info(f"Process {proc_info['process'].pid} completed, collecting results...")
+                logging.info(
+                    f"Process {proc_info['process'].pid} completed, collecting results..."
+                )
                 self.result_collector.collect(proc_info)
                 finished_list.append(proc_info)
 
-        self.active_tasks = [p for p in self.active_tasks if p not in finished_list]
+        self.active_tasks = [
+            p for p in self.active_tasks if p not in finished_list
+        ]
 
     def _process_has_terminated(self, proc_info):
         process = proc_info["process"]
         if process.poll() is not None:
-            logging.debug(f"Process {process.pid} completed with code {process.returncode}.")
+            logging.debug(
+                f"Process {process.pid} completed with code {process.returncode}."
+            )
             return True
         return False
 

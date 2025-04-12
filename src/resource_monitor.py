@@ -2,7 +2,12 @@ import time
 import threading
 import psutil
 
-from fuzzflow.src.utils import over_memory_threshold, DEFAULT_WAIT_TIME_SECONDS, get_total_subprocess_memory
+from fuzzflow.src.utils import (
+    over_memory_threshold,
+    DEFAULT_WAIT_TIME_SECONDS,
+    get_total_subprocess_memory,
+)
+
 
 class ResourceMonitor:
     """
@@ -28,7 +33,9 @@ class ResourceMonitor:
     def start(self):
         if not self.running:
             self.running = True
-            self.monitor_thread = threading.Thread(target=self._monitor_loop, daemon=True)
+            self.monitor_thread = threading.Thread(
+                target=self._monitor_loop, daemon=True
+            )
             self.monitor_thread.start()
 
     def stop(self):
@@ -44,9 +51,13 @@ class ResourceMonitor:
     def _monitor_loop(self):
         while self.running:
             current_usage = get_total_subprocess_memory(self.managed_pids)
-            print(f"[ResourceMonitor] Total subprocess memory usage: {current_usage} MB")
+            print(
+                f"[ResourceMonitor] Total subprocess memory usage: {current_usage} MB"
+            )
 
             if current_usage > (self.memory_limit * 0.9):
-                print("[ResourceMonitor] Memory usage critical. Consider killing some subprocesses!")
+                print(
+                    "[ResourceMonitor] Memory usage critical. Consider killing some subprocesses!"
+                )
 
             time.sleep(self.wait_time)
