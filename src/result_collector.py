@@ -65,3 +65,6 @@ class ResultCollector:
             )
         else:
             print("No results collected.")
+
+    def has_failures(self) -> bool:
+        return any(r["Status"] == "FAIL" for r in self.results)

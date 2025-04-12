@@ -29,7 +29,8 @@ def main():
             wait_time=cli_args.wait_time,
         )
 
-        orchestrator.run()
+        exit_code = orchestrator.run()
+        sys.exit(exit_code)
 
     except Exception as e:
         logging.error(f"Error in fuzzflow operation: {e}", exc_info=True)

@@ -57,6 +57,10 @@ class Orchestrator:
         self.result_collector.final_report()
         logging.info("Fuzzing completed.")
 
+        if self.result_collector.has_failures():
+            return 1
+        return 0
+
     def _start_fuzzing_loop(self):
         for harness in self.harnesses:
             logging.info(f"Starting fuzzing for {harness}")
