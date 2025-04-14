@@ -114,3 +114,9 @@ class Orchestrator:
     def _wait(self):
         logging.debug(f"Waiting {self.wait_time} seconds...")
         time.sleep(self.wait_time)
+
+    def stop_all_processes(self):
+        for task in self.active_tasks:
+            self.process_manager.kill_fuzzing(task)
+            self.result_collector.collect(task)
+        self.active_tasks.clear()

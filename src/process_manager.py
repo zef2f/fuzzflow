@@ -1,6 +1,7 @@
 import subprocess
 import time
 import logging
+from pathlib import Path
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -57,22 +58,11 @@ class ProcessManager:
 
         if process and process.poll() is None:
             try:
-                logging.warning(
-                    f"Attempting to terminate fuzzing process (Harness name: {harness_name}, PID: {process.pid})..."
-                )
                 process.terminate()
-
-                time.sleep(5)
-                if process.poll() is None:
-                    logging.error(
-                        f"Process {process.pid} did not terminate, forcing termination..."
-                    )
-                    process.kill()
-
-                logging.info(f"Process {process.pid} successfully terminated.")
+                process.communicate()
 
             except Exception as e:
                 logging.error(
-                    f"Error terminating process {process.pid} (Harness ID: {harness}): {e}",
+                    f"Error terminating process {process.pid} (Harness ID: {harness_name}): {e}",
                     exc_info=True,
                 )
