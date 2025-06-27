@@ -4,7 +4,6 @@ version = "2.0.0"
 description = "Modern fuzzing orchestration framework"
 authors = ["Denis Sergeev <zeff@altlinux.org>"]
 readme = "README.md"
-python = "^3.10"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -22,6 +21,9 @@ pytest-asyncio = "^0.21.0"
 black = "^23.0.0"
 mypy = "^1.0.0"
 ruff = "^0.1.0"
+
+[tool.poetry.scripts]
+fuzzflow = "fuzzflow.cli.app:main"
 
 [build-system]
 requires = ["poetry-core"]
