@@ -129,7 +129,7 @@ def run(
 
     # Run with appropriate UI
     if ui_mode == "tui":
-        # Run with Textual dashboard
+        # Run with Rich dashboard
         dashboard = FuzzflowDashboard(orchestrator)
         dashboard.run()
     elif ui_mode == "simple":

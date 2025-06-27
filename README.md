@@ -7,7 +7,7 @@ A modern, extensible fuzzing orchestration framework designed for managing compl
 - **Multi-Fuzzer Support**: Built-in adapters for AFL++, LibFuzzer, and Honggfuzz
 - **Intelligent Scheduling**: Priority-based, fair-share, and adaptive scheduling strategies
 - **Resource Management**: Memory and CPU constraints with automatic enforcement
-- **Real-time Monitoring**: Beautiful TUI dashboard using Textual
+- **Real-time Monitoring**: Compact interactive dashboard powered by Rich
 - **Metrics Collection**: Prometheus integration and efficiency tracking
 - **Extensible Architecture**: Easy to add new fuzzers and strategies
 
