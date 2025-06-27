@@ -1,0 +1,48 @@
+EXAMPLE_CONFIG_JSON = '''
+{
+  "orchestrator": {
+    "max_parallel_tasks": 10,
+    "scheduling_strategy": "priority",
+    "memory_limit_mb": 8192,
+    "cpu_limit_percent": 80,
+    "enable_preemption": false,
+    "enable_adaptive_scheduling": true,
+    "output_dir": "fuzzing_results"
+  },
+  "monitoring": {
+    "enable_metrics": true,
+    "enable_prometheus": true,
+    "prometheus_port": 9090,
+    "stall_detection_seconds": 3600
+  },
+  "tasks": [
+    {
+      "name": "fuzz_json_parser",
+      "command": ["./json_parser", "@@"],
+      "fuzzer_type": "afl++",
+      "priority": "HIGH",
+      "memory_limit_mb": 1024,
+      "cpu_cores": 2,
+      "timeout_seconds": 86400,
+      "fuzzer_config": {
+        "skip_deterministic": true,
+        "dictionary": "json.dict",
+        "power_schedule": "fast"
+      },
+      "tags": ["parser", "json", "priority"]
+    },
+    {
+      "name": "fuzz_image_decoder",
+      "command": ["./image_decoder"],
+      "fuzzer_type": "libfuzzer",
+      "priority": "NORMAL",
+      "memory_limit_mb": 2048,
+      "fuzzer_config": {
+        "max_len": 100000,
+        "workers": 4,
+        "dictionary": "images.dict"
+      },
+      "tags": ["decoder", "image"]
+    }
+  ]
+}
