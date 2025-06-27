@@ -1,111 +1,72 @@
-"""Textual-based TUI dashboard for Fuzzflow"""
+"""Rich-based dashboard for Fuzzflow"""
+
+from __future__ import annotations
 
 import asyncio
+import sys
+import contextlib
+from collections import deque
 from datetime import datetime
-from typing import Optional
+from typing import Deque
 
+from rich.console import Console
+from rich.layout import Layout
+from rich.live import Live
+from rich.panel import Panel
 from rich.table import Table
-from textual import events
-from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical
-from textual.reactive import reactive
-from textual.screen import Screen
-from textual.widgets import (
-    Button,
-    DataTable,
-    Footer,
-    Header,
-    Label,
-    ProgressBar,
-    Static,
-)
 
 from ..orchestrator import Orchestrator
 
 
-class MetricsPanel(Static):
-    """Panel showing fuzzing metrics"""
+class FuzzflowDashboard:
+    """Interactive dashboard implemented with Rich."""
 
-    def __init__(self, orchestrator: Orchestrator):
-        super().__init__()
+    def __init__(self, orchestrator: Orchestrator) -> None:
+        self.console = Console()
         self.orchestrator = orchestrator
+        self.logs: Deque[str] = deque(maxlen=100)
+        self._stop = asyncio.Event()
 
-    def compose(self) -> ComposeResult:
-        yield Label("Fuzzing Metrics", classes="panel-title")
+    # ------------------------------------------------------------------
+    def add_log(self, message: str) -> None:
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.logs.append(f"[{timestamp}] {message}")
 
-    def on_mount(self) -> None:
-        self.set_interval(1.0, self.update_metrics)
-
-    def update_metrics(self) -> None:
-        """Update metrics display"""
+    # ------------------------------------------------------------------
+    def _render_metrics(self) -> Panel:
         stats = self.orchestrator.get_statistics()
-
-        table = Table(show_header=False, box=None)
+        table = Table.grid(padding=(0, 1))
         table.add_column("Metric", style="cyan")
-        table.add_column("Value", style="white")
-
+        table.add_column("Value", style="magenta")
         table.add_row("Total Tasks", str(stats.get("total_tasks", 0)))
         table.add_row("Running", str(stats.get("running_tasks", 0)))
         table.add_row("Pending", str(stats.get("pending_tasks", 0)))
         table.add_row("Completed", str(stats.get("completed_tasks", 0)))
         table.add_row("Failed", str(stats.get("failed_tasks", 0)))
+        return Panel(table, title="Metrics", border_style="blue")
 
-        self.update(table)
-
-
-class ResourcePanel(Static):
-    """Panel showing resource usage"""
-
-    def __init__(self, orchestrator: Orchestrator):
-        super().__init__()
-        self.orchestrator = orchestrator
-
-    def compose(self) -> ComposeResult:
-        yield Label("System Resources", classes="panel-title")
-
-    def on_mount(self) -> None:
-        self.set_interval(1.0, self.update_resources)
-
-    def update_resources(self) -> None:
-        """Update resource display"""
-        if hasattr(self.orchestrator, 'resource_monitor'):
+    def _render_resources(self) -> Panel:
+        usage = None
+        if hasattr(self.orchestrator, "resource_monitor"):
             usage = self.orchestrator.resource_monitor.get_current_usage()
-            if usage:
-                table = Table(show_header=False, box=None)
-                table.add_column("Resource", style="cyan")
-                table.add_column("Usage", style="white")
+        table = Table.grid(padding=(0, 1))
+        table.add_column("Resource", style="cyan")
+        table.add_column("Usage", style="magenta")
+        if usage:
+            table.add_row(
+                "Memory",
+                f"{usage.memory_used_mb:.1f}/{usage.memory_total_mb:.1f} MB ({usage.memory_percent:.1f}%)",
+            )
+            table.add_row("CPU", f"{usage.cpu_percent:.1f}%")
+        return Panel(table, title="Resources", border_style="blue")
 
-                table.add_row(
-                    "Memory",
-                    f"{usage.memory_used_mb:.1f} / {usage.memory_total_mb:.1f} MB "
-                    f"({usage.memory_percent:.1f}%)"
-                )
-                table.add_row("CPU", f"{usage.cpu_percent:.1f}%")
-
-                self.update(table)
-
-
-class ProcessList(Static):
-    """List of running processes"""
-
-    def __init__(self, orchestrator: Orchestrator):
-        super().__init__()
-        self.orchestrator = orchestrator
-
-    def compose(self) -> ComposeResult:
-        yield Label("Active Processes", classes="panel-title")
-        yield DataTable()
-
-    def on_mount(self) -> None:
-        table = self.query_one(DataTable)
-        table.add_columns("Task", "Status", "CPU %", "Memory MB", "Runtime")
-        self.set_interval(1.0, self.update_processes)
-
-    def update_processes(self) -> None:
-        """Update process list"""
-        table = self.query_one(DataTable)
-        table.clear()
-
+    def _render_processes(self) -> Panel:
+        table = Table(title="Active Processes", show_lines=False)
+        table.add_column("Task", style="cyan", no_wrap=True)
+        table.add_column("Status", style="magenta")
+        table.add_column("CPU %", justify="right")
+        table.add_column("Mem MB", justify="right")
+        table.add_column("Runtime", justify="right")
         for process in self.orchestrator.process_manager.processes.values():
             if process.is_alive:
                 metrics = process.current_metrics
@@ -116,150 +77,76 @@ class ProcessList(Static):
                     f"{metrics.memory_mb:.1f}" if metrics else "-",
                     f"{process.runtime:.0f}s" if process.runtime else "-",
                 )
+        return Panel(table, border_style="blue")
 
+    def _render_logs(self) -> Panel:
+        text = "\n".join(self.logs)
+        return Panel(text, title="Logs", border_style="blue")
 
-class LogPanel(Static):
-    """Log output panel"""
+    def _layout(self) -> Layout:
+        layout = Layout()
+        layout.split_column(
+            Layout(name="top", size=8),
+            Layout(name="middle", ratio=1),
+            Layout(name="bottom", size=10),
+        )
+        layout["top"].split_row(Layout(self._render_metrics()), Layout(self._render_resources()))
+        layout["middle"].update(self._render_processes())
+        layout["bottom"].update(self._render_logs())
+        return layout
 
-    def __init__(self):
-        super().__init__()
-        self.logs = []
-        self.max_logs = 100
+    # ------------------------------------------------------------------
+    async def _input_loop(self) -> None:
+        loop = asyncio.get_running_loop()
+        while not self._stop.is_set():
+            cmd = await loop.run_in_executor(None, sys.stdin.readline)
+            if not cmd:
+                continue
+            cmd = cmd.strip().lower()
+            if cmd == "p":
+                count = self.orchestrator.pause_all()
+                self.add_log(f"Paused {count} processes")
+            elif cmd == "r":
+                count = self.orchestrator.resume_all()
+                self.add_log(f"Resumed {count} processes")
+            elif cmd == "s":
+                count = await self.orchestrator.stop_all()
+                self.add_log(f"Stopped {count} processes")
+            elif cmd == "q":
+                self._stop.set()
 
-    def add_log(self, message: str) -> None:
-        """Add log message"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        self.logs.append(f"[{timestamp}] {message}")
+    async def _refresh_loop(self, live: Live) -> None:
+        while not self._stop.is_set():
+            live.update(self._layout())
+            await asyncio.sleep(1)
 
-        if len(self.logs) > self.max_logs:
-            self.logs.pop(0)
-
-        self.update("\n".join(self.logs[-20:]))  # Show last 20 logs
-
-
-class FuzzflowDashboard(App):
-    """Main dashboard application"""
-
-    CSS = """
-    .panel-title {
-        background: $primary;
-        color: $text;
-        padding: 1;
-        text-align: center;
-        text-style: bold;
-    }
-
-    MetricsPanel {
-        border: solid $primary;
-        height: 10;
-    }
-
-    ResourcePanel {
-        border: solid $primary;
-        height: 8;
-    }
-
-    ProcessList {
-        border: solid $primary;
-    }
-
-    LogPanel {
-        border: solid $primary;
-        height: 15;
-    }
-
-    #sidebar {
-        width: 40;
-    }
-    """
-
-    BINDINGS = [
-        ("q", "quit", "Quit"),
-        ("p", "pause_all", "Pause All"),
-        ("r", "resume_all", "Resume All"),
-        ("s", "stop_all", "Stop All"),
-    ]
-
-    def __init__(self, orchestrator: Orchestrator):
-        super().__init__()
-        self.orchestrator = orchestrator
-        self.log_panel = LogPanel()
-
-    def compose(self) -> ComposeResult:
-        yield Header()
-
-        with Horizontal():
-            with Vertical(id="sidebar"):
-                yield MetricsPanel(self.orchestrator)
-                yield ResourcePanel(self.orchestrator)
-
-                with Horizontal():
-                    yield Button("Pause All", id="pause-btn", variant="warning")
-                    yield Button("Stop All", id="stop-btn", variant="error")
-
-            with Vertical():
-                yield ProcessList(self.orchestrator)
-                yield self.log_panel
-
-        yield Footer()
-
-    async def on_mount(self) -> None:
-        """Start orchestrator when dashboard mounts"""
-        self.log_panel.add_log("Starting Fuzzflow orchestrator...")
-
-        # Start orchestrator in background
-        asyncio.create_task(self.run_orchestrator())
-
-    async def run_orchestrator(self) -> None:
-        """Run orchestrator"""
+    async def _run_orchestrator(self) -> None:
+        self.add_log("Starting Fuzzflow orchestrator...")
         try:
             await self.orchestrator.start()
-            self.log_panel.add_log("Orchestrator started successfully")
-
-            # Wait for completion
-            while self.orchestrator.has_pending_tasks():
+            self.add_log("Orchestrator started")
+            while self.orchestrator.has_pending_tasks() and not self._stop.is_set():
                 await asyncio.sleep(1)
-
-            self.log_panel.add_log("All tasks completed")
-
+            self.add_log("All tasks completed")
         except Exception as e:
-            self.log_panel.add_log(f"Error: {e}")
+            self.add_log(f"Error: {e}")
         finally:
             await self.orchestrator.stop()
+            self._stop.set()
 
-    def action_quit(self) -> None:
-        """Quit application"""
-        asyncio.create_task(self.shutdown())
+    # ------------------------------------------------------------------
+    async def _run_async(self) -> None:
+        with Live(self._layout(), console=self.console, screen=True, refresh_per_second=4) as live:
+            refresh = asyncio.create_task(self._refresh_loop(live))
+            inputs = asyncio.create_task(self._input_loop())
+            orchestrator = asyncio.create_task(self._run_orchestrator())
+            await self._stop.wait()
+            for task in (refresh, inputs, orchestrator):
+                task.cancel()
+                with contextlib.suppress(Exception):
+                    await task
 
-    async def shutdown(self) -> None:
-        """Shutdown orchestrator and exit"""
-        self.log_panel.add_log("Shutting down...")
-        await self.orchestrator.stop()
-        self.exit()
+    def run(self) -> None:
+        """Run the dashboard."""
+        asyncio.run(self._run_async())
 
-    def action_pause_all(self) -> None:
-        """Pause all processes"""
-        count = self.orchestrator.pause_all()
-        self.log_panel.add_log(f"Paused {count} processes")
-
-    def action_resume_all(self) -> None:
-        """Resume all processes"""
-        count = self.orchestrator.resume_all()
-        self.log_panel.add_log(f"Resumed {count} processes")
-
-    def action_stop_all(self) -> None:
-        """Stop all processes"""
-        asyncio.create_task(self._stop_all())
-
-    async def _stop_all(self) -> None:
-        """Stop all processes async"""
-        self.log_panel.add_log("Stopping all processes...")
-        count = await self.orchestrator.stop_all()
-        self.log_panel.add_log(f"Stopped {count} processes")
-
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle button press"""
-        if event.button.id == "pause-btn":
-            self.action_pause_all()
-        elif event.button.id == "stop-btn":
-            self.action_stop_all()
