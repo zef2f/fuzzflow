@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "fuzzflow"
+version = "2.0.0"
+description = "Modern fuzzing orchestration framework"
+authors = ["Denis Sergeev <zeff@altlinux.org>"]
+readme = "README.md"
+python = "^3.10"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+plumbum = "^1.8.0"
+rich = "^13.0.0"
+typer = "^0.9.0"
+textual = "^0.40.0"
+psutil = "^5.9.0"
+pydantic = "^2.0.0"
+prometheus-client = "^0.19.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+black = "^23.0.0"
+mypy = "^1.0.0"
+ruff = "^0.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
