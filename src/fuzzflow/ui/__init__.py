@@ -1,9 +1,7 @@
 from .dashboard import FuzzflowDashboard
-from .widgets import ProcessList, MetricsPanel, ResourceGauge
+from .widgets import ResourceGauge
 
 __all__ = [
     "FuzzflowDashboard",
-    "ProcessList",
-    "MetricsPanel",
     "ResourceGauge",
 ]
